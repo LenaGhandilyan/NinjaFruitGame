@@ -3,11 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="css.css">
     <title>NinjaFruitGame</title>
 </head>
 <body>
-    
+    <canvas id="canvas"></canvas>
+    <div class="startGame" id="startGame">
+        <div class="home">
+            <h1>NinjaFruit Game <br></h1>
+            <button id="startGameBtn">Play <i class="fa-solid fa-gamepad"></i></button>
+            <p>Your Highest Score: <span id="homeHighScore"></span></p>
+        </div>
+    </div>
+    <div class="countDown" id="countDownContainer">
+        <h1></h1>
+    </div>
+
+    <!-- In Game Body -->
+    <div id="insideGameContainer">
+        <div class="scoreDiv">
+            <p> Current Score: <span id="score"></span></p>
+            <p>Highest Score: <span id="highScore"></span></p>
+        </div>
+        <div class="gameCountTime">
+            <h1 id="gameMinuteAndSecond">00 : 00</h1>
+        </div>
+        <div id="strikeCountDiv">
+            <h1 class="strikeCount">2x</h1>
+        </div>
+    </div>
+
+    <div id="gameEndDiv">
+        <div class="gameEndContainer">
+            <p>Your Score: <span id="endGameScore"></span></p>
+            <button id="returnHome">Return Home <i class="fa-solid fa-right-to-bracket"></i></button>
+        </div>
+    </div>
     <script src="scripts/main.js"></script>
+
 </body>
 </html>
