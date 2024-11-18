@@ -180,6 +180,15 @@ class Board {
       this.generateRandomFruit();
     }, FruitSpawnInterval);
     this.mousePosition = new Point(-10, -10);
+
+    // Mouse trail properties
+
+    this.lastX = null;
+    this.lastY = null;
+
+    this.canvas.addEventListener("mousemove", (event) => {
+      this.processMouseEvent(event);
+    });
   }
 
   /**
@@ -306,7 +315,7 @@ class Board {
   /**
    * @brief Generates random fruit.
    */
-  generateRandomFruit() {
+  generateRandomFruit() { 
     const image = FruitImages[Math.floor(Math.random() * FruitImages.length)];
     const position = Board.randomPosition(
       this.canvas.width,
@@ -333,22 +342,49 @@ class Board {
    * @brief Draws fruits on a canvas.
    */
   drawElements() {
+    // Clear only the fruit part of the canvas to retain the trail
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Draw fruits
     this.fruits.forEach((fruit) => {
       fruit.draw(this.ctx);
     });
 
-    this.ctx.beginPath();
-    this.ctx.arc(
-      this.mousePosition.x,
-      this.mousePosition.y,
-      10,
-      0,
-      Math.PI * 2
-    );
-    this.ctx.fillStyle = "white";
-    this.ctx.fill();
-    this.ctx.closePath();
+    const x = this.mousePosition.x;
+    const y = this.mousePosition.y;
+
+    // Draw mouse trail
+    if (this.lastX !== null && this.lastY !== null) {
+      const deltaX = x - this.lastX;
+      const deltaY = y - this.lastY;
+  
+      // Extend the starting point of the line backward to make it longer
+      const extendedX = this.lastX - deltaX * 2;
+      const extendedY = this.lastY - deltaY * 2;
+  
+      const lineThickness = 5; // Initial thickness of the line
+      const taperSteps = 5; // Number of steps for tapering
+      const taperFactor = 0.8;
+  
+      for (let i = 0; i < taperSteps; i++) {
+        this.ctx.strokeStyle = `rgba(0, 0, 0, ${0.7 * (1 - i / taperSteps)})`; // Adjust opacity for fade
+        this.ctx.lineWidth = lineThickness * Math.pow(taperFactor, i); // Gradually decrease line thickness
+  
+        this.ctx.beginPath();
+        this.ctx.moveTo(
+          extendedX + (deltaX * i) / taperSteps,
+          extendedY + (deltaY * i) / taperSteps
+        );
+        this.ctx.lineTo(
+          x + (deltaX * (i - taperSteps)) / taperSteps,
+          y + (deltaY * (i - taperSteps)) / taperSteps
+        );
+        this.ctx.stroke();
+      }
+    }
+
+    this.lastX = x;
+    this.lastY = y;
   }
 
   /**
@@ -432,69 +468,18 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
+
 gameLoop();
 
-// const canvas = document.getElementById("canvas");
-// const ctx = canvas.getContext("2d");
+//const slider = document.getElementById("slider-input");
+//const value = document.getElementById("slider-value");
+//const audio = document.getElementById("audio");
 
-// //Set Canvas Size
-// canvas.width = window.innerWidth;
-// canvas.height = window.innerHeight;
+//value.textContent = slider.value;
+//audio.volume = slider.value / 100;
 
-// let lastX;
-// let lastY;
-
-// window.addEventListener("mousemove", (event) => {
-//     const x = event.pageX;
-//     const y = event.pageY;
-
-//     // Clear the previous line segment
-//     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-//     if (lastX !== null && lastY !== null) {
-
-//         const deltaX = x - lastX;
-//         const deltaY = y - lastY;
-
-//         // Extend the starting point of the line backward to make it longer
-//         const extendedX = lastX - deltaX * 2;
-//         const extendedY = lastY - deltaY * 2;
-
-//         const lineThickness = 5; // Initial thickness of the line
-//         const taperSteps = 5; // Number of steps for tapering
-//         const taperFactor = 0.8;
-
-//         for (let i = 0; i < taperSteps; i++) {
-//             ctx.strokeStyle = `rgba(0, 0, 0, ${0.7 * (1 - i / taperSteps)})`; // Adjust opacity for fade
-//             ctx.lineWidth = lineThickness * Math.pow(taperFactor, i); // Gradually decrease line thickness
-
-//             ctx.beginPath();
-//             ctx.moveTo(
-//                 extendedX + (deltaX * i) / taperSteps, 
-//                 extendedY + (deltaY * i) / taperSteps
-//             );
-//             ctx.lineTo(
-//                 x + (deltaX * (i - taperSteps)) / taperSteps, 
-//                 y + (deltaY * (i - taperSteps)) / taperSteps
-//             );
-//             ctx.stroke();
-//         }
-//     }
-//     // Update the last position to the current cursor position
-//     lastX = x;
-//     lastY = y;
-
-// });
-
-const slider = document.getElementById("slider-input");
-const value = document.getElementById("slider-value");
-const audio = document.getElementById("audio");
-
-value.textContent = slider.value;
-audio.volume = slider.value / 100;
-
-slider.addEventListener("input", function() {
-    const volume = this.value / 100;
-    value.textContent = this.value;
-    audio.volume = volume;
-})
+//slider.addEventListener("input", function() {
+//    const volume = this.value / 100;
+//    value.textContent = this.value;
+//    audio.volume = volume;
+//})
