@@ -1,4 +1,3 @@
-
 /**
  * @brief 2D point implementation.
  */
@@ -124,6 +123,20 @@ class Fruit {
   }
 
   /**
+   * @brief Returns true if an object is a bomb.
+   */
+  isBomb() {
+    return this.imagePath().includes("bomb");
+  }
+
+  /**
+   * @brief Returns true if an object is a fruit.
+   */
+  isFruit() {
+    return !this.isBomb();
+  }
+
+  /**
    * @brief Slices a fruit.
    */
   slice() {
@@ -147,8 +160,6 @@ class Fruit {
 
   /**
    * @brief Updated position of a fruit.
-   *
-   * @note Contains slicing for testing purposes.
    */
   move() {
     this.position.x += this.velocity.vx;
@@ -166,6 +177,7 @@ class Board {
    */
   constructor() {
     this.canvas = document.getElementById("canvas");
+    canvas.style.cursor = "none";
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
     this.canvas.addEventListener("mousemove", (event) => {
@@ -189,6 +201,8 @@ class Board {
     this.canvas.addEventListener("mousemove", (event) => {
       this.processMouseEvent(event);
     });
+
+    this.fruitCount = 0;
   }
 
   /**
@@ -315,7 +329,12 @@ class Board {
   /**
    * @brief Generates random fruit.
    */
-  generateRandomFruit() { 
+  generateRandomFruit() {
+    if (this.fruitCount > 0 && this.fruitCount % 10 === 0) {
+      this.generateBomb();
+      return;
+    }
+
     const image = FruitImages[Math.floor(Math.random() * FruitImages.length)];
     const position = Board.randomPosition(
       this.canvas.width,
@@ -333,7 +352,36 @@ class Board {
       image,
       FruitImageSize,
       (fruit) => {
+        this.fruitCount += 1;
         this.fruits.push(fruit);
+      }
+    );
+  }
+
+  /**
+   * @brief Generates a bomb.
+   */
+  generateBomb() {
+    const image = "images/bomb.png";
+
+    const position = Board.randomPosition(
+      this.canvas.width,
+      this.canvas.height
+    );
+    const velocity = Board.randomVelocity(
+      position,
+      this.canvas.width,
+      this.canvas.height
+    );
+
+    const bomb = new Fruit(
+      position,
+      velocity,
+      image,
+      FruitImageSize,
+      (bomb) => {
+        this.fruitCount += 1;
+        this.fruits.push(bomb);
       }
     );
   }
@@ -344,7 +392,7 @@ class Board {
   drawElements() {
     // Clear only the fruit part of the canvas to retain the trail
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    
+
     // Draw fruits
     this.fruits.forEach((fruit) => {
       fruit.draw(this.ctx);
@@ -357,19 +405,19 @@ class Board {
     if (this.lastX !== null && this.lastY !== null) {
       const deltaX = x - this.lastX;
       const deltaY = y - this.lastY;
-  
+
       // Extend the starting point of the line backward to make it longer
       const extendedX = this.lastX - deltaX * 2;
       const extendedY = this.lastY - deltaY * 2;
-  
+
       const lineThickness = 5; // Initial thickness of the line
       const taperSteps = 5; // Number of steps for tapering
       const taperFactor = 0.8;
-  
+
       for (let i = 0; i < taperSteps; i++) {
         this.ctx.strokeStyle = `rgba(0, 0, 0, ${0.7 * (1 - i / taperSteps)})`; // Adjust opacity for fade
         this.ctx.lineWidth = lineThickness * Math.pow(taperFactor, i); // Gradually decrease line thickness
-  
+
         this.ctx.beginPath();
         this.ctx.moveTo(
           extendedX + (deltaX * i) / taperSteps,
@@ -418,6 +466,12 @@ class Board {
    */
   slice(fruit, direction) {
     fruit.slice();
+
+    if (fruit.isBomb()) {
+      this.explode(fruit);
+      return;
+    }
+
     const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);
     // half one <-
     const imageSize =
@@ -458,6 +512,19 @@ class Board {
     halfTwo.slice();
     this.fruits.splice(this.fruits.indexOf(fruit), 1);
   }
+
+  /**
+   * @brief Explodes a bomb after slicing.
+   *
+   * Causes game over.
+   *
+   * @todo implement proper visualization.
+   * @param bomb Bomb object that had been sliced.
+   */
+  explode(bomb) {
+    clearInterval(this.fruitMoveIntervalId);
+    alert("Game over!");
+  }
 }
 
 let board = new Board();
@@ -467,7 +534,6 @@ function gameLoop() {
   board.drawElements();
   requestAnimationFrame(gameLoop);
 }
-
 
 gameLoop();
 
