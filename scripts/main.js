@@ -1,7 +1,66 @@
+/** functionalize the html and calling by id and class  */
+const playButton = document.getElementById('startGameBtn');
+const startGameContainer = document.getElementById('startGame');
+const insideGameContainer = document.getElementById('insideGameContainer');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+playButton.addEventListener('click', () => {
+  startGameContainer.style.display = 'none';
+  insideGameContainer.style.display = 'flex';
+  hasGameStarted = true;
+  isGameEnd = false;
+  setTimeout(() => {
+      animate();
+      updateGameObjects();
+      spawnFruit();
+      startGameTimer();
+  }, 4000)
+})
+const backgroundImage = new Image();
+backgroundImage.src = 'images/background.jpg'; 
+
+function animate() {
+    // context.fillStyle = 'url(images/background.jpg)';
+    //  context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    spawnFruit();
+    updateGameObjects();
+    drawGameObjects();
+    checkGameOver();
+    //Cancel animation when the game is end.
+    if (isGameEnd) {
+        cancelAnimationFrame(animationId);
+        return
+    }
+    animationId = requestAnimationFrame(animate);
+};
+
+/** for calcualting the score */
+// Initialize score variables
+let currentScore = 0;
+let highScore = localStorage.getItem('highScore') || 0; // Retrieve saved high score
+
+// Update the high score span on page load
+document.getElementById('highScore').textContent = highScore;
+
+// Update score display
+function updateScore(newPoints) {
+    currentScore += newPoints;
+    document.getElementById('score').textContent = currentScore;
+
+    // Update high score if needed
+    if (currentScore > highScore) {
+        highScore = currentScore;
+        document.getElementById('highScore').textContent = highScore;
+        localStorage.setItem('highScore', highScore); // Save new high score
+    }
+}
 
 /**
  * @brief 2D point implementation.
  */
+
 class Point {
   constructor(x, y) {
     this.x = x;
@@ -381,8 +440,10 @@ class Board {
    * @param direction Direction of a slice.
    */
   slice(fruit, direction) {
+    //giving points for slicing the fruit
+    updateScore(10); // Award 10 points for each sliced fruit
     fruit.slice();
-    const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);
+    const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);  
     // half one <-
     const imageSize =
       direction === SliceDirection.Horizontal
