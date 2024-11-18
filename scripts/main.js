@@ -148,12 +148,11 @@ class Fruit {
   /**
    * @brief Updated position of a fruit.
    *
-   * @note Conatains slicing for testing purposes.
+   * @note Contains slicing for testing purposes.
    */
   move() {
     this.position.x += this.velocity.vx;
     this.velocity.vy += Gravity;
-    const originalPosition = this.position.y;
     this.position.y += this.velocity.vy;
   }
 }
@@ -434,7 +433,7 @@ function gameLoop() {
 }
 
 gameLoop();
-=======
+
 // const canvas = document.getElementById("canvas");
 // const ctx = canvas.getContext("2d");
 
