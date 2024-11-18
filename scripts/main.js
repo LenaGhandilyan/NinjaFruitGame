@@ -10,6 +10,9 @@ playButton.addEventListener('click', () => {
   insideGameContainer.style.display = 'flex';
   hasGameStarted = true;
   isGameEnd = false;
+  // Reset missed fruits and display all chances
+  board.missedFruits = 0;
+  board.chanceImages.forEach(image => image.style.display = 'block'); // Show all chances
   setTimeout(() => {
       animate();
       updateGameObjects();
@@ -23,7 +26,7 @@ backgroundImage.src = 'images/background.jpg';
 function animate() {
     // context.fillStyle = 'url(images/background.jpg)';
     //  context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
     spawnFruit();
     updateGameObjects();
     drawGameObjects();
@@ -239,6 +242,36 @@ class Board {
       this.generateRandomFruit();
     }, FruitSpawnInterval);
     this.mousePosition = new Point(-10, -10);
+
+    // Missed fruits counter and chance images
+    this.missedFruits = 0;
+    this.maxMisses = 3;
+    this.chanceImages = [
+      document.getElementById('chance1'),
+      document.getElementById('chance2'),
+      document.getElementById('chance3') ];
+  }
+  /** @reducing the chance */
+  // Method to reduce chances and update the images
+  reduceChances() {
+    if (this.missedFruits < this.maxMisses) {
+      this.chanceImages[this.missedFruits].style.display = 'none';  // disapper  the image if missed one fruit
+      this.missedFruits++;
+
+      if (this.missedFruits === this.maxMisses) {
+        this.gameOver();  // End game if all chances are lost
+      }
+    }
+  }
+  // Game over logic
+  gameOver() {
+    alert("Game Over! You've missed three fruits.");
+    isGameEnd = true;  // Assuming you have a flag for game end.
+    cancelAnimationFrame(animationId); // Stop the game loop
+  }
+  // Method to handle missed fruit
+  handleMissedFruit() {
+    this.reduceChances();  // Reduce chances when a fruit is missed
   }
 
   /**
@@ -419,7 +452,12 @@ class Board {
   moveFruits() {
     this.fruits.forEach((fruit) => {
       fruit.move();
-    });
+      /**@Handling only not sliced fruit */
+      // Check if the fruit is not sliced and has fallen too far below the canvas (missed fruit)
+      if (!fruit.isSliced() && fruit.position.y > this.canvas.height) {
+                /** @Handle missed fruit by reducing chances*/
+                this.handleMissedFruit();
+    }});
 
     // remove fruits outside of the canvas
     this.fruits = this.fruits.filter(
@@ -439,9 +477,11 @@ class Board {
    * @param fruit Fruit that had been sliced.
    * @param direction Direction of a slice.
    */
+  strikeCount = 0;
   slice(fruit, direction) {
     //giving points for slicing the fruit
     updateScore(10); // Award 10 points for each sliced fruit
+    
     fruit.slice();
     const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);  
     // half one <-
@@ -559,3 +599,7 @@ slider.addEventListener("input", function() {
     value.textContent = this.value;
     audio.volume = volume;
 })
+/**
+ * @brief strike the fruit
+ */
+
