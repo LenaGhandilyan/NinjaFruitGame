@@ -82,7 +82,7 @@ body{
     display: none;
     padding: 10px 20px;
 }
-.countDown{
+.timerDisplay{
     color: white;
     font-family: 'Poppins';
     position: absolute;
@@ -92,7 +92,7 @@ body{
     z-index: 13;
 }
 
-.countDown h1{
+.timerDisplay h1{
     animation: animCount 8s linear ease-in;
 }
 
