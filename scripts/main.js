@@ -1,78 +1,6 @@
-/** functionalize the html and calling by id and class  */
-const playButton = document.getElementById('startGameBtn');
-const startGameContainer = document.getElementById('startGame');
-const insideGameContainer = document.getElementById('insideGameContainer');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-
-playButton.addEventListener('click', () => {
-  startGameContainer.style.display = 'none';
-  insideGameContainer.style.display = 'flex';
-  hasGameStarted = true;
-  isGameEnd = false;
-  // Reset missed fruits and display all chances
-  board.missedFruits = 0;
-  board.chanceImages.forEach(image => image.style.display = 'block'); // Show all chances
-  setTimeout(() => {
-      animate();
-      updateGameObjects();
-      spawnFruit();
-      startGameTimer();
-  }, 4000)
-})
-/***@Visibilty of the board */
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        isGamePause = false;
-        console.log('Game is resumed');
-    }
-
-})
-const backgroundImage = new Image();
-backgroundImage.src = 'images/background.jpg'; 
-
-function animate() {
-    // context.fillStyle = 'url(images/background.jpg)';
-    //  context.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-    spawnFruit();
-    updateGameObjects();
-    drawGameObjects();
-    checkGameOver();
-    //Cancel animation when the game is end.
-    if (isGameEnd) {
-        cancelAnimationFrame(animationId);
-        return
-    }
-    animationId = requestAnimationFrame(animate);
-};
-
-/** for calcualting the score */
-// Initialize score variables
-let currentScore = 0;
-let highScore = localStorage.getItem('highScore') || 0; // Retrieve saved high score
-
-// Update the high score span on page load
-document.getElementById('highScore').textContent = highScore;
-document.getElementById('homeHighScore').textContent = highScore
-
-// Update score display
-function updateScore(newPoints) {
-    currentScore += newPoints;
-    document.getElementById('score').textContent = currentScore;
-
-    // Update high score if needed
-    if (currentScore > highScore) {
-        highScore = currentScore;
-        document.getElementById('highScore').textContent = highScore;
-        localStorage.setItem('highScore', highScore); // Save new high score
-    }
-}
-
 /**
  * @brief 2D point implementation.
  */
-
 class Point {
   constructor(x, y) {
     this.x = x;
@@ -132,24 +60,6 @@ const FruitMoveInterval = 20;
 // Fruit flies across the screen up to 6 seconds
 const FruitFlyingInterval = 6000;
 
-/**
- * @brief Calculates gravity applied to a fruit.
- *
- * It's assumed that a free-falling fruit should traverse canvas
- * within FruitFlyingInterval / 2 sec.
- * Uniformly accelerated movement equations are used to calculate
- * the gravity: g = (2 * S) / (t * t);
- *
- * @return Fruit position.
- */
-function calculateGravity() {
-  const time = FruitFlyingInterval / 2 / FruitMoveInterval;
-  return (window.innerHeight * 2) / time / time;
-}
-
-// Gravity causes fruit to slow down and eventually fall
-const Gravity = calculateGravity();
-
 const SliceDirection = Object.freeze({
   Vertical: 0,
   Horizontal: 1,
@@ -164,13 +74,15 @@ class Fruit {
    *
    * @param position Initial position of a fruit.
    * @param velocity Initial velocity of a fruit.
+   * @param gravity Fruit gravity.
    * @param imagePath Path to a fruit image.
    * @param imageSize Size of an image displayed on the canvas.
    * @param loadedCallback Callback to notify image load.
    */
-  constructor(position, velocity, imagePath, imageSize, loadedCallback) {
+  constructor(position, velocity, gravity, imagePath, imageSize, loadedCallback) {
     this.position = position;
     this.velocity = velocity;
+    this.gravity = gravity;
     this.imageSize = imageSize;
     this.image = new Image();
     this.image.onload = () => {
@@ -235,7 +147,7 @@ class Fruit {
    */
   move() {
     this.position.x += this.velocity.vx;
-    this.velocity.vy += Gravity;
+    this.velocity.vy += this.gravity;
     this.position.y += this.velocity.vy;
   }
 }
@@ -246,72 +158,60 @@ class Fruit {
 class Board {
   /**
    * @brief Board object constructor.
+   *
+   * @param backgroundImage Background image.
+   * @param missedFruitCallback Called when a whole fruit falls below the board.
+   * @param slicedBombCallback Called when a bomb is sliced.
+   * @param slicedFruitCallback Called when a fruit is sliced.
    */
-  constructor() {
+  constructor(
+    backgroundImage,
+    missedFruitCallback,
+    slicedBombCallback,
+    slicedFruitCallback
+  ) {
+    // initialize callbacks
+    this.backgroundImage = backgroundImage;
+    this.missedFruitCallback = missedFruitCallback;
+    this.slicedBombCallback = slicedBombCallback;
+    this.slicedFruitCallback = slicedFruitCallback;
+
+    // initialize 2d context
     this.canvas = document.getElementById("canvas");
-    canvas.style.cursor = "none";
+    this.canvas.style.cursor = "none";
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
     this.canvas.addEventListener("mousemove", (event) => {
       this.processMouseEvent(event);
     });
     this.ctx = canvas.getContext("2d");
+
+    // flying objects
     this.fruits = [];
-        /***@StrikeCounter function */
-    this.strikeCount = 0; // Track simultaneous slices
-    this.strikeCountDiv = document.getElementById('strikeCountDiv'); // Reference the HTML element
-    this.fruitMoveIntervalId = setInterval(() => {
-      this.moveFruits();
-    }, FruitMoveInterval);
-    this.fruitSpawnIntervalId = setInterval(() => {
-      this.generateRandomFruit();
-    }, FruitSpawnInterval);
+
+    // initial mouse position
     this.mousePosition = new Point(-10, -10);
-    this.fruitCount = 0;
-    // Missed fruits counter and chance images
-    this.missedFruits = 0;
-    this.maxMisses = 3;
-    this.chanceImages = [
-      document.getElementById('chance1'),
-      document.getElementById('chance2'),
-      document.getElementById('chance3') ];
+
+    /***@StrikeCounter function */
+    this.strikeCount = 0; // Track simultaneous slices
+    this.strikeCountDiv = document.getElementById("strikeCountDiv"); // Reference the HTML element
   }
+
   /** @brief update the strike count */
   updateStrikeCountDisplay(multiplier) {
     if (!this.strikeCountDiv) return;
 
-    const strikeCountElement = this.strikeCountDiv.querySelector('.strikeCount');
+    const strikeCountElement =
+      this.strikeCountDiv.querySelector(".strikeCount");
     strikeCountElement.textContent = `${multiplier}x`;
 
     // Show the strike count UI
-    this.strikeCountDiv.style.display = 'block';
+    this.strikeCountDiv.style.display = "block";
 
     // Hide it after 1 second
     setTimeout(() => {
-        this.strikeCountDiv.style.display = 'none';
+      this.strikeCountDiv.style.display = "none";
     }, 1000);
-}
-  /** @reducing the chance */
-  // Method to reduce chances and update the images
-  reduceChances() {
-    if (this.missedFruits < this.maxMisses) {
-      this.chanceImages[this.missedFruits].style.display = 'none';  // disapper  the image if missed one fruit
-      this.missedFruits++;
-
-      if (this.missedFruits === this.maxMisses) {
-        this.gameOver();  // End game if all chances are lost
-      }
-    }
-  }
-  // Game over logic
-  gameOver() {
-    alert("Game Over! You've missed three fruits.");
-    isGameEnd = true;  // Assuming you have a flag for game end.
-    cancelAnimationFrame(animationId); // Stop the game loop
-  }
-  // Method to handle missed fruit
-  handleMissedFruit() {
-    this.reduceChances();  // Reduce chances when a fruit is missed
   }
 
   /**
@@ -344,23 +244,25 @@ class Board {
    * @param startPosition Starting position of a fruit.
    * @param width Width of the canvas.
    * @param height Height of the canvas.
+   * @param gravity Gravity pulling fruit down.
+   * @param flyingInterval Fruit total flying time.
    * @return Fruit velocity.
    */
-  static randomVelocity(startPosition, width, height) {
+  static randomVelocity(startPosition, width, height, gravity, flyingInterval) {
     const Margin = 0.05;
     // The point where a fruit will start to fall due to the Gravity.
     const peekHeight = (height / 2) * (Margin + Math.random() * (1 - Margin));
     // The distance fruit travelled before falling.
     const distanceY = height - peekHeight;
     // The time needed for a fruit to free fall.
-    const fallingTime = Math.floor(Math.sqrt((distanceY * 2) / Gravity) + 0.5);
-    const risingTime = FruitFlyingInterval / FruitMoveInterval - fallingTime;
+    const fallingTime = Math.floor(Math.sqrt((distanceY * 2) / gravity) + 0.5);
+    const risingTime = flyingInterval / FruitMoveInterval - fallingTime;
     // The initial velocity needed for a fruit to reach peekHeight.
     const velocityY =
-      -(distanceY + (Gravity * risingTime * risingTime) / 2) / risingTime;
+      -(distanceY + (gravity * risingTime * risingTime) / 2) / risingTime;
     const distanceX = width / 2 - startPosition.x;
     const velocityX =
-      ((distanceX * 2) / FruitFlyingInterval) * FruitMoveInterval;
+      ((distanceX * 2) / flyingInterval) * FruitMoveInterval;
     return new Velocity(velocityX, velocityY);
   }
 
@@ -438,12 +340,7 @@ class Board {
   /**
    * @brief Generates random fruit.
    */
-  generateRandomFruit() {
-    if (this.fruitCount > 0 && this.fruitCount % 10 === 0) {
-      this.generateBomb();
-      return;
-    }
-
+  generateRandomFruit(gravity, flyingInterval) {
     const image = FruitImages[Math.floor(Math.random() * FruitImages.length)];
     const position = Board.randomPosition(
       this.canvas.width,
@@ -452,16 +349,18 @@ class Board {
     const velocity = Board.randomVelocity(
       position,
       this.canvas.width,
-      this.canvas.height
+      this.canvas.height,
+      gravity,
+      flyingInterval
     );
 
     const fruit = new Fruit(
       position,
       velocity,
+      gravity,
       image,
       FruitImageSize,
       (fruit) => {
-        this.fruitCount += 1;
         this.fruits.push(fruit);
       }
     );
@@ -470,7 +369,7 @@ class Board {
   /**
    * @brief Generates a bomb.
    */
-  generateBomb() {
+  generateBomb(gravity, flyingInterval) {
     const image = "images/bomb.png";
 
     const position = Board.randomPosition(
@@ -480,16 +379,18 @@ class Board {
     const velocity = Board.randomVelocity(
       position,
       this.canvas.width,
-      this.canvas.height
+      this.canvas.height,
+      gravity,
+      flyingInterval
     );
 
     const bomb = new Fruit(
       position,
       velocity,
+      gravity,
       image,
       FruitImageSize,
       (bomb) => {
-        this.fruitCount += 1;
         this.fruits.push(bomb);
       }
     );
@@ -501,6 +402,13 @@ class Board {
   drawElements() {
     // Clear only the fruit part of the canvas to retain the trail
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.drawImage(
+      this.backgroundImage,
+      0,
+      0,
+      this.canvas.width,
+      this.canvas.height
+    );
 
     // Draw fruits
     this.fruits.forEach((fruit) => {
@@ -553,12 +461,16 @@ class Board {
   moveFruits() {
     this.fruits.forEach((fruit) => {
       fruit.move();
-      /**@Handling only not sliced fruit */
-      // Check if the fruit is not sliced and has fallen too far below the canvas (missed fruit)
-      if (!fruit.isSliced() && fruit.position.y > this.canvas.height) {
-                /** @Handle missed fruit by reducing chances*/
-                this.handleMissedFruit();
-    }});
+
+      // handle a missed fruit
+      if (
+        !fruit.isSliced() &&
+        !fruit.isBomb() &&
+        fruit.position.y > this.canvas.height
+      ) {
+        this.missedFruitCallback();
+      }
+    });
 
     // remove fruits outside of the canvas
     this.fruits = this.fruits.filter(
@@ -579,18 +491,16 @@ class Board {
    * @param direction Direction of a slice.
    */
   slice(fruit, direction) {
-    //giving points for slicing the fruit
-    updateScore(10); // Award 10 points for each sliced fruit
     fruit.slice();
-
     if (fruit.isBomb()) {
-      this.explode(fruit);
+      this.slicedBombCallback("You've sliced a bomb");
       return;
     }
+
+    this.slicedFruitCallback();
     this.strikeCount++;
 
-
-    const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);  
+    const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);
     // half one <-
     const imageSize =
       direction === SliceDirection.Horizontal
@@ -601,6 +511,7 @@ class Board {
     let halfOne = new Fruit(
       new Point(fruit.position.x, fruit.position.y),
       new Velocity(velocityX, 0),
+      fruit.gravity,
       slicedImages[0],
       imageSize,
       (fruit) => {
@@ -621,6 +532,7 @@ class Board {
     const halfTwo = new Fruit(
       new Point(positionX, positionY),
       new Velocity(velocityX, 0),
+      fruit.gravity,
       slicedImages[1],
       imageSize,
       (fruit) => {
@@ -633,33 +545,159 @@ class Board {
 
     // Reset the strike count after a brief delay
     setTimeout(() => {
-        this.strikeCount = 0; // Reset for the next slicing event
+      this.strikeCount = 0; // Reset for the next slicing event
     }, 100);
+  }
+}
+
+class GameEngine {
+  static backGroundImage() {
+    const backgroundImage = new Image();
+    backgroundImage.src = "images/background.jpg";
+    return backgroundImage;
   }
 
   /**
-   * @brief Explodes a bomb after slicing.
+   * @brief Calculates gravity applied to a fruit.
    *
-   * Causes game over.
+   * It's assumed that a free-falling fruit should traverse canvas
+   * within fruitFlyingInterval / 2.
+   * Uniformly accelerated movement equations are used to calculate
+   * the gravity: g = (2 * S) / (t * t);
    *
-   * @todo implement proper visualization.
-   * @param bomb Bomb object that had been sliced.
+   * @param fruitFlyingInterval Current fruit flying time.
+   * @return Fruit position.
    */
-  explode(bomb) {
+  static calculateGravity(fruitFlyingInterval) {
+    const time = fruitFlyingInterval / 2 / FruitMoveInterval;
+    return (window.innerHeight * 2) / time / time;
+  }
+
+  constructor() {
+    // these member members should not change during the game
+    this.maxMisses = 3;
+    this.chanceImages = [
+      document.getElementById("chance1"),
+      document.getElementById("chance2"),
+      document.getElementById("chance3"),
+    ];
+    // Show all chances
+    this.chanceImages.forEach((image) => (image.style.display = "block"));
+
+    this.fruitSpawnInterval = FruitSpawnInterval;
+    this.fruitFlyingInterval = FruitFlyingInterval;
+    // Gravity causes fruit to slow down and eventually fall
+    this.gravity = GameEngine.calculateGravity(this.fruitFlyingInterval);
+    
+    this.board = new Board(
+      GameEngine.backGroundImage(),
+      () => {
+        this.updateMissedFruits();
+      },
+      (message) => {
+        this.gameOver(message);
+      },
+      () => {
+        this.updateScore();
+      }
+    );
+
+    this.missedFruits = 0;
+    this.currentScore = 0;
+    this.highScore = localStorage.getItem("highScore") || 0; // Retrieve saved high score
+    // Update the high score span on page load
+    document.getElementById("highScore").textContent = this.highScore;
+    document.getElementById("homeHighScore").textContent = this.highScore;
+  }
+
+  updateMissedFruits() {
+    // Remove the image
+    this.chanceImages[this.missedFruits++].style.display = "none";
+
+    if (this.missedFruits === this.maxMisses) {
+      this.gameOver("You've missed three fruits");
+    }
+  }
+
+  loop() {
+    this.board.drawElements();
+    requestAnimationFrame(() => {
+      this.loop();
+    });
+  }
+
+  spawnFruit() {
+    const i = Math.floor(Math.random() * 10) + 1;
+    // spawn a bomb
+    // TO BE DISCUSSED
+    if (i > 7) {
+      this.board.generateBomb(this.gravity, this.fruitFlyingInterval);
+    } else {
+      this.board.generateRandomFruit(this.gravity, this.fruitFlyingInterval);
+      this.board.generateRandomFruit(this.gravity, this.fruitFlyingInterval);
+    }
+  }
+
+  start() {
+    // start spawning the fruits
+    this.fruitSpawnIntervalId = setInterval(() => {
+      this.spawnFruit();
+    }, this.fruitSpawnInterval);
+    // start moving the fruits
+    this.fruitMoveIntervalId = setInterval(() => {
+      this.board.moveFruits();
+    }, FruitMoveInterval);
+    // generate first fruit
+    this.board.generateRandomFruit(this.gravity, this.fruitFlyingInterval);
+    game.loop();
+  }
+
+  pause() {
+    // stop all activity
+    clearInterval(this.fruitSpawnIntervalId);
     clearInterval(this.fruitMoveIntervalId);
-    alert("Game over!");
+    alert("Game paused");
+    // start spawning the fruits
+    this.fruitSpawnIntervalId = setInterval(() => {
+      this.spawnFruit();
+    }, this.fruitSpawnInterval);
+    // start moving the fruits
+    this.fruitMoveIntervalId = setInterval(() => {
+      this.board.moveFruits();
+    }, FruitMoveInterval);
+  }
+
+  gameOver(message) {
+    // stop all activity
+    clearInterval(this.fruitSpawnIntervalId);
+    clearInterval(this.fruitMoveIntervalId);
+    // show an alert
+    alert("Game over! " + message);
+  }
+
+  // Update score display
+  updateScore() {
+    // TODO multiply by x strokes
+    const newPoints = 10;
+    this.currentScore += newPoints;
+    document.getElementById("score").textContent = this.currentScore;
+
+    if (this.currentScore > this.highScore) {
+      this.highScore = this.currentScore;
+      document.getElementById("highScore").textContent = this.highScore;
+      localStorage.setItem("highScore", this.highScore); // Save new high score
+    }
+
+    // update fruit speed every 50 points
+    // TO BE DISCUSSED
+    if (this.currentScore > 0 && this.currentScore % 50 === 0) {
+      this.fruitFlyingInterval -= FruitFlyingInterval / 5;
+      this.gravity = GameEngine.calculateGravity(this.fruitFlyingInterval);
+    }
   }
 }
 
-let board = new Board();
-board.generateRandomFruit();
-
-function gameLoop() {
-  board.drawElements();
-  requestAnimationFrame(gameLoop);
-}
-
-gameLoop();
+const game = new GameEngine();
 
 // Audio Controlls
 const audio = document.getElementById("audio");
@@ -690,7 +728,25 @@ muteButton.addEventListener("click", () => {
   }
 });
 
-/**
- * @brief strike the fruit
- */
+let audioPlaying = false;
+// Pause game when the page is hidden
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    audioPlaying = !audio.isPaused;
+    if (audioPlaying) {
+      audio.pause();
+    }
+    game.pause();
+  } else {
+    if (audioPlaying) {
+      audio.play();
+    }
+  }
+});
 
+// Pause game when "play" is clicked
+document.getElementById("startGameBtn").addEventListener("click", () => {
+  document.getElementById("startGame").style.display = "none";
+  document.getElementById("insideGameContainer").style.display = "flex";
+  game.start();
+});
