@@ -183,7 +183,6 @@ body{
     font-size: 22px;
 }
 
-
 #returnHome{
     background-color: transparent;
     border: none;
@@ -198,4 +197,22 @@ body{
 #returnHome:hover{
     color: rgb(255, 49, 84);
     border-bottom: 2px solid rgb(255, 49, 84);
+}
+
+/* Audio Control  */
+.sound-text {
+    font-size: 20px;
+    font-weight: 400;
+    margin-right: 7px;
+}
+#muteButton {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+}
+.fa-volume-up, 
+.fa-volume-mute {
+    font-size: 19px;
+    color: #ffffff;
 }
