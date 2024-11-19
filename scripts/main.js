@@ -24,6 +24,7 @@ playButton.addEventListener('click', () => {
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
         isGamePause = false;
+        console.log('Game is resumed');
     }
 
 })
@@ -53,6 +54,7 @@ let highScore = localStorage.getItem('highScore') || 0; // Retrieve saved high s
 
 // Update the high score span on page load
 document.getElementById('highScore').textContent = highScore;
+document.getElementById('homeHighScore').textContent = highScore
 
 // Update score display
 function updateScore(newPoints) {
@@ -255,6 +257,9 @@ class Board {
     });
     this.ctx = canvas.getContext("2d");
     this.fruits = [];
+        /***@StrikeCounter function */
+    this.strikeCount = 0; // Track simultaneous slices
+    this.strikeCountDiv = document.getElementById('strikeCountDiv'); // Reference the HTML element
     this.fruitMoveIntervalId = setInterval(() => {
       this.moveFruits();
     }, FruitMoveInterval);
@@ -262,7 +267,6 @@ class Board {
       this.generateRandomFruit();
     }, FruitSpawnInterval);
     this.mousePosition = new Point(-10, -10);
-
     this.fruitCount = 0;
     // Missed fruits counter and chance images
     this.missedFruits = 0;
@@ -272,6 +276,21 @@ class Board {
       document.getElementById('chance2'),
       document.getElementById('chance3') ];
   }
+  /** @brief update the strike count */
+  updateStrikeCountDisplay(multiplier) {
+    if (!this.strikeCountDiv) return;
+
+    const strikeCountElement = this.strikeCountDiv.querySelector('.strikeCount');
+    strikeCountElement.textContent = `${multiplier}x`;
+
+    // Show the strike count UI
+    this.strikeCountDiv.style.display = 'block';
+
+    // Hide it after 1 second
+    setTimeout(() => {
+        this.strikeCountDiv.style.display = 'none';
+    }, 1000);
+}
   /** @reducing the chance */
   // Method to reduce chances and update the images
   reduceChances() {
@@ -559,17 +578,17 @@ class Board {
    * @param fruit Fruit that had been sliced.
    * @param direction Direction of a slice.
    */
-  strikeCount = 0;
   slice(fruit, direction) {
     //giving points for slicing the fruit
     updateScore(10); // Award 10 points for each sliced fruit
-    
     fruit.slice();
 
     if (fruit.isBomb()) {
       this.explode(fruit);
       return;
     }
+    this.strikeCount++;
+
 
     const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);  
     // half one <-
@@ -610,6 +629,12 @@ class Board {
     );
     halfTwo.slice();
     this.fruits.splice(this.fruits.indexOf(fruit), 1);
+    this.updateStrikeCountDisplay(this.strikeCount);
+
+    // Reset the strike count after a brief delay
+    setTimeout(() => {
+        this.strikeCount = 0; // Reset for the next slicing event
+    }, 100);
   }
 
   /**
