@@ -263,6 +263,7 @@ class Board {
     }, FruitSpawnInterval);
     this.mousePosition = new Point(-10, -10);
 
+    this.fruitCount = 0;
     // Missed fruits counter and chance images
     this.missedFruits = 0;
     this.maxMisses = 3;
@@ -564,6 +565,12 @@ class Board {
     updateScore(10); // Award 10 points for each sliced fruit
     
     fruit.slice();
+
+    if (fruit.isBomb()) {
+      this.explode(fruit);
+      return;
+    }
+
     const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);  
     // half one <-
     const imageSize =
