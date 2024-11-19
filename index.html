@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles/main.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>NinjaFruitGame</title>
   </head>
   <body>
@@ -14,7 +15,14 @@
             <button id="startGameBtn">Play</button>
             <p>Your Highest Score: <span id="homeHighScore"></span></p>
         </div>
-    </div>
+        <!-- Audio Control -->
+        <div class="sound-control">
+          <span class="sound-text">Sound</span><button id="muteButton"><i class="fas fa-volume-up"></i></button>
+          <audio id="audio" src="audio/background-music.mp3" autoplay loop></audio>
+        </div>
+        <!--Audio Control-->
+      </div>
+
     <div class="countDown" id="countDownContainer">
         <h1></h1>
     </div>
@@ -38,13 +46,6 @@
             <button id="returnHome">Return Home</button>
         </div>
     </div>
-    <div class="slider-control">
-      <div class="slider">
-        <input id="slider-input" type="range" min="0" max="100" value="0.5" />
-      </div>
-      <div id="slider-value">100</div>
-    </div>
-    <audio id="audio" src="" autoplay="on"></audio>-->
     <script src="scripts/main.js"></script>
   </body>
 </html>

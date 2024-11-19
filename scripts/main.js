@@ -661,18 +661,35 @@ function gameLoop() {
 
 gameLoop();
 
-//const slider = document.getElementById("slider-input");
-//const value = document.getElementById("slider-value");
-//const audio = document.getElementById("audio");
+// Audio Controlls
+const audio = document.getElementById("audio");
+const muteButton = document.getElementById("muteButton");
 
-//value.textContent = slider.value;
-//audio.volume = slider.value / 100;
+// Attempt to play audio on page load
+window.addEventListener("load", () => {
+  audio.play().catch((error) => {
+    console.log("Autoplay blocked. User interaction required.");
+    muteButton.innerHTML = "<i class='fas fa-volume-mute'></i>";
+  });
+});
 
-slider.addEventListener("input", function() {
-    const volume = this.value / 100;
-    value.textContent = this.value;
-    audio.volume = volume;
-})
+// Set initial button state
+muteButton.innerHTML = audio.muted
+  ? "<i class='fas fa-volume-mute'></i>"
+  : "<i class='fas fa-volume-up'></i>";
+
+// Mute/unmute toggle
+muteButton.addEventListener("click", () => {
+  if (audio.muted) {
+    audio.muted = false;
+    audio.play().catch((error) => console.log("Playback error:", error));
+    muteButton.innerHTML = "<i class='fas fa-volume-up'></i>";
+  } else {
+    audio.muted = true;
+    muteButton.innerHTML = "<i class='fas fa-volume-mute'></i>";
+  }
+});
+
 /**
  * @brief strike the fruit
  */
