@@ -128,11 +128,17 @@ body{
     margin-right: 10px;  
 }
 #strikeCountDiv{
-    position: absolute;
+    display: none;
+    position: absolute; 
     bottom: 10px;
     right: 30px;
+    transform: translateX(-50%); 
+    font-size: 24px; 
+    font-weight: bold; 
+    color: yellow;   
 }
 
+/*
 .strikeCount{
     animation: animStrikeCount .2s linear;
     width: 45px;
@@ -142,10 +148,14 @@ body{
     0%{
         transform: scale(1);
     }
+    50%{
+        transform: scale(1.5);
+    }
     100%{
         transform: scale(2.5);
     }
 }
+    */
 
 #gameEndDiv{
     position: absolute;
