@@ -1,7 +1,69 @@
+/** functionalize the html and calling by id and class  */
+const playButton = document.getElementById('startGameBtn');
+const startGameContainer = document.getElementById('startGame');
+const insideGameContainer = document.getElementById('insideGameContainer');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+playButton.addEventListener('click', () => {
+  startGameContainer.style.display = 'none';
+  insideGameContainer.style.display = 'flex';
+  hasGameStarted = true;
+  isGameEnd = false;
+  // Reset missed fruits and display all chances
+  board.missedFruits = 0;
+  board.chanceImages.forEach(image => image.style.display = 'block'); // Show all chances
+  setTimeout(() => {
+      animate();
+      updateGameObjects();
+      spawnFruit();
+      startGameTimer();
+  }, 4000)
+})
+const backgroundImage = new Image();
+backgroundImage.src = 'images/background.jpg'; 
+
+function animate() {
+    // context.fillStyle = 'url(images/background.jpg)';
+    //  context.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    spawnFruit();
+    updateGameObjects();
+    drawGameObjects();
+    checkGameOver();
+    //Cancel animation when the game is end.
+    if (isGameEnd) {
+        cancelAnimationFrame(animationId);
+        return
+    }
+    animationId = requestAnimationFrame(animate);
+};
+
+/** for calcualting the score */
+// Initialize score variables
+let currentScore = 0;
+let highScore = localStorage.getItem('highScore') || 0; // Retrieve saved high score
+
+// Update the high score span on page load
+document.getElementById('highScore').textContent = highScore;
+
+// Update score display
+function updateScore(newPoints) {
+    currentScore += newPoints;
+    document.getElementById('score').textContent = currentScore;
+
+    // Update high score if needed
+    if (currentScore > highScore) {
+        highScore = currentScore;
+        document.getElementById('highScore').textContent = highScore;
+        localStorage.setItem('highScore', highScore); // Save new high score
+    }
+}
 
 /**
  * @brief 2D point implementation.
  */
+
 class Point {
   constructor(x, y) {
     this.x = x;
@@ -124,6 +186,20 @@ class Fruit {
   }
 
   /**
+   * @brief Returns true if an object is a bomb.
+   */
+  isBomb() {
+    return this.imagePath().includes("bomb");
+  }
+
+  /**
+   * @brief Returns true if an object is a fruit.
+   */
+  isFruit() {
+    return !this.isBomb();
+  }
+
+  /**
    * @brief Slices a fruit.
    */
   slice() {
@@ -147,8 +223,6 @@ class Fruit {
 
   /**
    * @brief Updated position of a fruit.
-   *
-   * @note Contains slicing for testing purposes.
    */
   move() {
     this.position.x += this.velocity.vx;
@@ -166,6 +240,7 @@ class Board {
    */
   constructor() {
     this.canvas = document.getElementById("canvas");
+    canvas.style.cursor = "none";
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
     this.canvas.addEventListener("mousemove", (event) => {
@@ -181,14 +256,36 @@ class Board {
     }, FruitSpawnInterval);
     this.mousePosition = new Point(-10, -10);
 
-    // Mouse trail properties
+    this.fruitCount = 0;
+    // Missed fruits counter and chance images
+    this.missedFruits = 0;
+    this.maxMisses = 3;
+    this.chanceImages = [
+      document.getElementById('chance1'),
+      document.getElementById('chance2'),
+      document.getElementById('chance3') ];
+  }
+  /** @reducing the chance */
+  // Method to reduce chances and update the images
+  reduceChances() {
+    if (this.missedFruits < this.maxMisses) {
+      this.chanceImages[this.missedFruits].style.display = 'none';  // disapper  the image if missed one fruit
+      this.missedFruits++;
 
-    this.lastX = null;
-    this.lastY = null;
-
-    this.canvas.addEventListener("mousemove", (event) => {
-      this.processMouseEvent(event);
-    });
+      if (this.missedFruits === this.maxMisses) {
+        this.gameOver();  // End game if all chances are lost
+      }
+    }
+  }
+  // Game over logic
+  gameOver() {
+    alert("Game Over! You've missed three fruits.");
+    isGameEnd = true;  // Assuming you have a flag for game end.
+    cancelAnimationFrame(animationId); // Stop the game loop
+  }
+  // Method to handle missed fruit
+  handleMissedFruit() {
+    this.reduceChances();  // Reduce chances when a fruit is missed
   }
 
   /**
@@ -315,7 +412,12 @@ class Board {
   /**
    * @brief Generates random fruit.
    */
-  generateRandomFruit() { 
+  generateRandomFruit() {
+    if (this.fruitCount > 0 && this.fruitCount % 10 === 0) {
+      this.generateBomb();
+      return;
+    }
+
     const image = FruitImages[Math.floor(Math.random() * FruitImages.length)];
     const position = Board.randomPosition(
       this.canvas.width,
@@ -333,7 +435,36 @@ class Board {
       image,
       FruitImageSize,
       (fruit) => {
+        this.fruitCount += 1;
         this.fruits.push(fruit);
+      }
+    );
+  }
+
+  /**
+   * @brief Generates a bomb.
+   */
+  generateBomb() {
+    const image = "images/bomb.png";
+
+    const position = Board.randomPosition(
+      this.canvas.width,
+      this.canvas.height
+    );
+    const velocity = Board.randomVelocity(
+      position,
+      this.canvas.width,
+      this.canvas.height
+    );
+
+    const bomb = new Fruit(
+      position,
+      velocity,
+      image,
+      FruitImageSize,
+      (bomb) => {
+        this.fruitCount += 1;
+        this.fruits.push(bomb);
       }
     );
   }
@@ -344,7 +475,7 @@ class Board {
   drawElements() {
     // Clear only the fruit part of the canvas to retain the trail
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    
+
     // Draw fruits
     this.fruits.forEach((fruit) => {
       fruit.draw(this.ctx);
@@ -357,19 +488,19 @@ class Board {
     if (this.lastX !== null && this.lastY !== null) {
       const deltaX = x - this.lastX;
       const deltaY = y - this.lastY;
-  
+
       // Extend the starting point of the line backward to make it longer
       const extendedX = this.lastX - deltaX * 2;
       const extendedY = this.lastY - deltaY * 2;
-  
+
       const lineThickness = 5; // Initial thickness of the line
       const taperSteps = 5; // Number of steps for tapering
       const taperFactor = 0.8;
-  
+
       for (let i = 0; i < taperSteps; i++) {
         this.ctx.strokeStyle = `rgba(0, 0, 0, ${0.7 * (1 - i / taperSteps)})`; // Adjust opacity for fade
         this.ctx.lineWidth = lineThickness * Math.pow(taperFactor, i); // Gradually decrease line thickness
-  
+
         this.ctx.beginPath();
         this.ctx.moveTo(
           extendedX + (deltaX * i) / taperSteps,
@@ -396,7 +527,12 @@ class Board {
   moveFruits() {
     this.fruits.forEach((fruit) => {
       fruit.move();
-    });
+      /**@Handling only not sliced fruit */
+      // Check if the fruit is not sliced and has fallen too far below the canvas (missed fruit)
+      if (!fruit.isSliced() && fruit.position.y > this.canvas.height) {
+                /** @Handle missed fruit by reducing chances*/
+                this.handleMissedFruit();
+    }});
 
     // remove fruits outside of the canvas
     this.fruits = this.fruits.filter(
@@ -416,9 +552,19 @@ class Board {
    * @param fruit Fruit that had been sliced.
    * @param direction Direction of a slice.
    */
+  strikeCount = 0;
   slice(fruit, direction) {
+    //giving points for slicing the fruit
+    updateScore(10); // Award 10 points for each sliced fruit
+    
     fruit.slice();
-    const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);
+
+    if (fruit.isBomb()) {
+      this.explode(fruit);
+      return;
+    }
+
+    const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);  
     // half one <-
     const imageSize =
       direction === SliceDirection.Horizontal
@@ -458,6 +604,19 @@ class Board {
     halfTwo.slice();
     this.fruits.splice(this.fruits.indexOf(fruit), 1);
   }
+
+  /**
+   * @brief Explodes a bomb after slicing.
+   *
+   * Causes game over.
+   *
+   * @todo implement proper visualization.
+   * @param bomb Bomb object that had been sliced.
+   */
+  explode(bomb) {
+    clearInterval(this.fruitMoveIntervalId);
+    alert("Game over!");
+  }
 }
 
 let board = new Board();
@@ -468,7 +627,6 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-
 gameLoop();
 
 //const slider = document.getElementById("slider-input");
@@ -478,8 +636,12 @@ gameLoop();
 //value.textContent = slider.value;
 //audio.volume = slider.value / 100;
 
-//slider.addEventListener("input", function() {
-//    const volume = this.value / 100;
-//    value.textContent = this.value;
-//    audio.volume = volume;
-//})
+slider.addEventListener("input", function() {
+    const volume = this.value / 100;
+    value.textContent = this.value;
+    audio.volume = volume;
+})
+/**
+ * @brief strike the fruit
+ */
+
