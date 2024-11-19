@@ -20,6 +20,13 @@ playButton.addEventListener('click', () => {
       startGameTimer();
   }, 4000)
 })
+/***@Visibilty of the board */
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        isGamePause = false;
+    }
+
+})
 const backgroundImage = new Image();
 backgroundImage.src = 'images/background.jpg'; 
 
