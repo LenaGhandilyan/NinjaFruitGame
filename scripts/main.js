@@ -175,6 +175,7 @@ class Board {
     /***@StrikeCounter function */
     this.strikeCount = 0; // Track simultaneous slices
     this.strikeCountDiv = document.getElementById("strikeCountDiv"); // Reference the HTML element
+    this.sliceAudio = new Audio("audio/Slice.wav");
   }
 
   /** @brief update the strike count */
@@ -274,7 +275,6 @@ class Board {
 
   processMouseEvent(event) {
     const newPosition = new Point(event.pageX, event.pageY);
-    const sliceAudio = new Audio("audio/Slice.wav");
     const sliceDirection = Board.getSliceDirection(this.mousePosition, newPosition);
     this.mousePosition = newPosition;
 
@@ -290,7 +290,7 @@ class Board {
       if (this.mousePosition.x >= topLeft.x && this.mousePosition.y >= topLeft.y && this.mousePosition.x <= bottomRight.x && this.mousePosition.y <= bottomRight.y) {
         // mouse position is inside a fruit image
         this.slice(this.fruits[i], sliceDirection);
-        sliceAudio.play();
+        this.sliceAudio.play();
       } else {
         ++i;
       }
@@ -341,6 +341,11 @@ class Board {
     const y = this.mousePosition.y;
 
     // Draw mouse trail
+    if (x < 0 || y < 0) {
+      // don't draw mouse trail upon initialization
+      return;
+    }
+
     if (this.lastX !== null && this.lastY !== null) {
       this.ctx.strokeStyle = `rgba(255, 255, 255, 0.7)`;
       this.ctx.lineWidth = 5;
@@ -404,7 +409,6 @@ class Board {
       return;
     }
 
-    this.slicedFruitCallback();
     this.strikeCount++;
 
     const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);
@@ -428,6 +432,7 @@ class Board {
 
     // Reset the strike count after a brief delay
     setTimeout(() => {
+      this.slicedFruitCallback(this.strikeCount * this.strikeCount * 10);
       this.strikeCount = 0; // Reset for the next slicing event
     }, 100);
   }
@@ -473,16 +478,15 @@ class GameEngine {
       () => {
         this.updateMissedFruits();
       },
-      (message) => {
-        this.gameOver(message);
-      },
       () => {
-        this.updateScore();
+        this.gameOver();
+      },
+      (newPoints) => {
+        this.updateScore(newPoints);
       }
     );
     this.isPaused = false;
-
-    this.missedFruits = 0;
+    (this.isGameOver = false), (this.missedFruits = 0);
     this.currentScore = 0;
     this.highScore = localStorage.getItem("highScore") || 0; // Retrieve saved high score
     // Update the high score span on page load
@@ -495,7 +499,7 @@ class GameEngine {
     this.chanceImages[this.missedFruits++].style.display = "none";
 
     if (this.missedFruits === this.maxMisses) {
-      this.gameOver("You've missed three fruits");
+      this.gameOver();
     }
   }
 
@@ -541,7 +545,7 @@ class GameEngine {
   }
 
   resume() {
-    if (!this.isPaused) {
+    if (!this.isPaused || this.isGameOver) {
       return;
     }
 
@@ -556,18 +560,18 @@ class GameEngine {
     }, FruitMoveInterval);
   }
 
-  gameOver(message) {
+  gameOver() {
+    this.isGameOver = true;
     // stop all activity
     clearInterval(this.fruitSpawnIntervalId);
     clearInterval(this.fruitMoveIntervalId);
-    // show an alert
-    alert("Game over! " + message);
+    const overlay = document.getElementById("gameEndDiv");
+    overlay.style.display = "block";
+    document.getElementById("endGameScore").textContent = this.currentScore;
   }
 
   // Update score display
-  updateScore() {
-    // TODO multiply by x strokes
-    const newPoints = 10;
+  updateScore(newPoints) {
     this.currentScore += newPoints;
     document.getElementById("score").textContent = this.currentScore;
 

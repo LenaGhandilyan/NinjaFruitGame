@@ -4,46 +4,46 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles/main.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <title>NinjaFruitGame</title>
   </head>
   <body>
     <canvas id="canvas"></canvas>
     <div class="startGame" id="startGame">
-        <div class="home">
-            <h1>NinjaFruit Game</h1>
-            <button id="startGameBtn">Play</button>
-            <p>Your Highest Score: <span id="homeHighScore"></span></p>
-        </div>
-        <!-- Audio Control -->
-        <div class="sound-control">
-          <span class="sound-text">Sound</span><button id="muteButton"><i class="fas fa-volume-up"></i></button>
-          <audio id="audio" src="audio/background-music.mp3" autoplay loop></audio>
-        </div>
-        <!--Audio Control-->
+      <div class="home">
+        <h1>NinjaFruit Game</h1>
+        <button id="startGameBtn">Play</button>
+        <p>Your Highest Score: <span id="homeHighScore"></span></p>
       </div>
+      <!-- Audio Control -->
+      <div class="sound-control">
+        <span class="sound-text">Sound</span><button id="muteButton"><i class="fas fa-volume-up"></i></button>
+        <audio id="audio" src="audio/background-music.mp3" autoplay loop></audio>
+      </div>
+      <!--Audio Control-->
+    </div>
     <div class="countDown" id="countDownContainer">
-        <h1></h1>
+      <h1></h1>
     </div>
     <div id="insideGameContainer">
-        <div class="scoreDiv">
-            <p>Current Score: <span id="score">0</span></p>
-            <p>Highest Score: <span id="highScore">0</span></p>
-        </div>
-        <div class="gameCountTime">
-            <img id="chance1" src="images/x.png" alt="Chance 1">
-            <img id="chance2" src="images/xx.png" alt="Chance 2">
-            <img id="chance3" src="images/xxx.png" alt="Chance 3">
-        </div>
-        <div id="strikeCountDiv">
-            <h1 class="strikeCount">1x</h1>
-        </div>
+      <div class="scoreDiv">
+        <p>Current Score: <span id="score">0</span></p>
+        <p>Highest Score: <span id="highScore">0</span></p>
+      </div>
+      <div class="gameCountTime">
+        <img id="chance1" src="images/x.png" alt="Chance 1" />
+        <img id="chance2" src="images/xx.png" alt="Chance 2" />
+        <img id="chance3" src="images/xxx.png" alt="Chance 3" />
+      </div>
+      <div id="strikeCountDiv">
+        <h1 class="strikeCount">1x</h1>
+      </div>
     </div>
     <div id="gameEndDiv">
-        <div class="gameEndContainer">
-            <p>Your Score: <span id="endGameScore"></span></p>
-            <button id="returnHome">Return Home</button>
-        </div>
+      <div class="gameEndContainer">
+        <p>GAME OVER! Your Score: <span id="endGameScore">0</span></p>
+        <button id="returnHome">Return Home</button>
+      </div>
     </div>
     <script src="scripts/main.js"></script>
   </body>
