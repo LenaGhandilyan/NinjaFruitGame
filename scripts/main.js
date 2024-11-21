@@ -304,6 +304,7 @@ class Board {
   }
 
   processMouseEvent(event) {
+    const sliceAudio = new Audio("audio/slice.wav");
     const newPosition = new Point(event.pageX, event.pageY);
     const sliceDirection = Board.getSliceDirection(
       this.mousePosition,
@@ -331,6 +332,7 @@ class Board {
       ) {
         // mouse position is inside a fruit image
         this.slice(this.fruits[i], sliceDirection);
+        sliceAudio.play();
       } else {
         ++i;
       }
@@ -401,6 +403,7 @@ class Board {
    */
   drawElements() {
     // Clear only the fruit part of the canvas to retain the trail
+    this.ctx.shadowBlur = 0;
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.drawImage(
       this.backgroundImage,
@@ -417,37 +420,26 @@ class Board {
 
     const x = this.mousePosition.x;
     const y = this.mousePosition.y;
-
-    // Draw mouse trail
-    if (this.lastX !== null && this.lastY !== null) {
-      const deltaX = x - this.lastX;
-      const deltaY = y - this.lastY;
-
-      // Extend the starting point of the line backward to make it longer
-      const extendedX = this.lastX - deltaX * 2;
-      const extendedY = this.lastY - deltaY * 2;
-
-      const lineThickness = 5; // Initial thickness of the line
-      const taperSteps = 5; // Number of steps for tapering
-      const taperFactor = 0.8;
-
-      for (let i = 0; i < taperSteps; i++) {
-        this.ctx.strokeStyle = `rgba(0, 0, 0, ${0.7 * (1 - i / taperSteps)})`; // Adjust opacity for fade
-        this.ctx.lineWidth = lineThickness * Math.pow(taperFactor, i); // Gradually decrease line thickness
-
-        this.ctx.beginPath();
-        this.ctx.moveTo(
-          extendedX + (deltaX * i) / taperSteps,
-          extendedY + (deltaY * i) / taperSteps
-        );
-        this.ctx.lineTo(
-          x + (deltaX * (i - taperSteps)) / taperSteps,
-          y + (deltaY * (i - taperSteps)) / taperSteps
-        );
-        this.ctx.stroke();
-      }
-    }
-
+ 
+ // Draw mouse trail
+  if (this.lastX !== null && this.lastY !== null) {
+    this.ctx.strokeStyle = `rgba(255, 255, 255, 0.7)`;
+    this.ctx.lineWidth = 5;
+    this.ctx.lineCap = "round";
+    this.ctx.shadowBlur = 10; // Add a blur effect to the line
+    this.ctx.shadowColor = `rgba(255, 255, 255, 0.7)`;
+  
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.lastX, this.lastY);
+    this.ctx.lineTo(x, y);
+    this.ctx.stroke();
+  
+    // Add a few more points to the path to create a longer trail
+    this.ctx.lineTo(x + (x - this.lastX) * 0.5, y + (y - this.lastY) * 0.5);
+    this.ctx.lineTo(x + (x - this.lastX) * 1.5, y + (y - this.lastY) * 1.5);
+    this.ctx.stroke();
+  }
+  
     this.lastX = x;
     this.lastY = y;
   }
@@ -573,6 +565,7 @@ class GameEngine {
     return (window.innerHeight * 2) / time / time;
   }
 
+
   constructor() {
     // these member members should not change during the game
     this.maxMisses = 3;
@@ -611,12 +604,23 @@ class GameEngine {
   }
 
   updateMissedFruits() {
-    // Remove the image
-    this.chanceImages[this.missedFruits++].style.display = "none";
-
-    if (this.missedFruits === this.maxMisses) {
-      this.gameOver("You've missed three fruits");
+    if (this.missedFruits < this.chanceImages.length) {
+        // Hide the current chance image
+        this.chanceImages[this.missedFruits].style.display = "none";
+        this.missedFruits++;
     }
+
+    // Trigger game over if all chances are missed
+    if (this.missedFruits === this.maxMisses) {
+        this.gameOver("You have riched your limit");
+    }
+}
+
+  gameOver(message) {
+    // stop all activity
+    clearInterval(this.fruitSpawnIntervalId);
+    clearInterval(this.fruitMoveIntervalId);
+    alert("Game Over: " + message);
   }
 
   loop() {
@@ -667,13 +671,7 @@ class GameEngine {
     }, FruitMoveInterval);
   }
 
-  gameOver(message) {
-    // stop all activity
-    clearInterval(this.fruitSpawnIntervalId);
-    clearInterval(this.fruitMoveIntervalId);
-    // show an alert
-    alert("Game over! " + message);
-  }
+
 
   // Update score display
   updateScore() {
@@ -705,7 +703,7 @@ const muteButton = document.getElementById("muteButton");
 
 // Attempt to play audio on page load
 window.addEventListener("load", () => {
-  audio.play().catch((error) => {
+  audio.play().catch((_error) => {
     console.log("Autoplay blocked. User interaction required.");
     muteButton.innerHTML = "<i class='fas fa-volume-mute'></i>";
   });
@@ -722,6 +720,8 @@ muteButton.addEventListener("click", () => {
     audio.muted = false;
     audio.play().catch((error) => console.log("Playback error:", error));
     muteButton.innerHTML = "<i class='fas fa-volume-up'></i>";
+    audio.volume = 0.2;
+
   } else {
     audio.muted = true;
     muteButton.innerHTML = "<i class='fas fa-volume-mute'></i>";
