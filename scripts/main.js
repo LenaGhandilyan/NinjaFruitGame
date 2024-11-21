@@ -43,16 +43,7 @@ class Velocity {
 // Initial fruit image size (not sliced)
 const FruitImageSize = new Size(90, 90);
 // Initial fruit images (not sliced)
-const FruitImages = [
-  "images/apple.png",
-  "images/banana.png",
-  "images/cherry.png",
-  "images/coconut.png",
-  "images/grapes.png",
-  "images/mango.png",
-  "images/pear.png",
-  "images/pineapple.png",
-];
+const FruitImages = ["images/apple.png", "images/banana.png", "images/cherry.png", "images/coconut.png", "images/grapes.png", "images/mango.png", "images/pear.png", "images/pineapple.png"];
 // new Fruit is spawned every 3 sec.
 const FruitSpawnInterval = 3000;
 // Fruit position is updated every 20 msec
@@ -133,13 +124,7 @@ class Fruit {
    * @param ctx 2D context to draw a fruit.
    */
   draw(ctx) {
-    ctx.drawImage(
-      this.image,
-      this.position.x,
-      this.position.y,
-      this.imageSize.width,
-      this.imageSize.height
-    );
+    ctx.drawImage(this.image, this.position.x, this.position.y, this.imageSize.width, this.imageSize.height);
   }
 
   /**
@@ -164,12 +149,7 @@ class Board {
    * @param slicedBombCallback Called when a bomb is sliced.
    * @param slicedFruitCallback Called when a fruit is sliced.
    */
-  constructor(
-    backgroundImage,
-    missedFruitCallback,
-    slicedBombCallback,
-    slicedFruitCallback
-  ) {
+  constructor(backgroundImage, missedFruitCallback, slicedBombCallback, slicedFruitCallback) {
     // initialize callbacks
     this.backgroundImage = backgroundImage;
     this.missedFruitCallback = missedFruitCallback;
@@ -201,8 +181,7 @@ class Board {
   updateStrikeCountDisplay(multiplier) {
     if (!this.strikeCountDiv) return;
 
-    const strikeCountElement =
-      this.strikeCountDiv.querySelector(".strikeCount");
+    const strikeCountElement = this.strikeCountDiv.querySelector(".strikeCount");
     strikeCountElement.textContent = `${multiplier}x`;
 
     // Show the strike count UI
@@ -225,10 +204,7 @@ class Board {
    */
   static randomPosition(width, height) {
     const Margin = 0.05;
-    const x = Math.floor(
-      width * Margin +
-        Math.random() * (width * (1 - 2 * Margin) - FruitImageSize.width)
-    );
+    const x = Math.floor(width * Margin + Math.random() * (width * (1 - 2 * Margin) - FruitImageSize.width));
     return new Point(x, height);
   }
 
@@ -258,11 +234,9 @@ class Board {
     const fallingTime = Math.floor(Math.sqrt((distanceY * 2) / gravity) + 0.5);
     const risingTime = flyingInterval / FruitMoveInterval - fallingTime;
     // The initial velocity needed for a fruit to reach peekHeight.
-    const velocityY =
-      -(distanceY + (gravity * risingTime * risingTime) / 2) / risingTime;
+    const velocityY = -(distanceY + (gravity * risingTime * risingTime) / 2) / risingTime;
     const distanceX = width / 2 - startPosition.x;
-    const velocityX =
-      ((distanceX * 2) / flyingInterval) * FruitMoveInterval;
+    const velocityX = ((distanceX * 2) / flyingInterval) * FruitMoveInterval;
     return new Velocity(velocityX, velocityY);
   }
 
@@ -282,10 +256,7 @@ class Board {
   static slicedImagePaths(originalPath, direction) {
     const path = originalPath.substr(originalPath.lastIndexOf("/") + 1);
     const suffix = direction === SliceDirection.Vertical ? "_v" : "_h";
-    return [
-      "images/" + path.replace(".", suffix + "1."),
-      "images/" + path.replace(".", suffix + "2."),
-    ];
+    return ["images/" + path.replace(".", suffix + "1."), "images/" + path.replace(".", suffix + "2.")];
   }
 
   /**
@@ -298,17 +269,12 @@ class Board {
   static getSliceDirection(from, to) {
     const deltaX = Math.abs(to.x - from.x);
     const deltaY = Math.abs(to.y - from.y);
-    return deltaX > deltaY
-      ? SliceDirection.Horizontal
-      : SliceDirection.Vertical;
+    return deltaX > deltaY ? SliceDirection.Horizontal : SliceDirection.Vertical;
   }
 
   processMouseEvent(event) {
     const newPosition = new Point(event.pageX, event.pageY);
-    const sliceDirection = Board.getSliceDirection(
-      this.mousePosition,
-      newPosition
-    );
+    const sliceDirection = Board.getSliceDirection(this.mousePosition, newPosition);
     this.mousePosition = newPosition;
 
     for (let i = 0; i < this.fruits.length; ) {
@@ -318,17 +284,9 @@ class Board {
       }
 
       const topLeft = this.fruits[i].position;
-      const bottomRight = new Point(
-        topLeft.x + this.fruits[i].imageSize.width,
-        topLeft.y + this.fruits[i].imageSize.height
-      );
+      const bottomRight = new Point(topLeft.x + this.fruits[i].imageSize.width, topLeft.y + this.fruits[i].imageSize.height);
 
-      if (
-        this.mousePosition.x >= topLeft.x &&
-        this.mousePosition.y >= topLeft.y &&
-        this.mousePosition.x <= bottomRight.x &&
-        this.mousePosition.y <= bottomRight.y
-      ) {
+      if (this.mousePosition.x >= topLeft.x && this.mousePosition.y >= topLeft.y && this.mousePosition.x <= bottomRight.x && this.mousePosition.y <= bottomRight.y) {
         // mouse position is inside a fruit image
         this.slice(this.fruits[i], sliceDirection);
       } else {
@@ -342,28 +300,12 @@ class Board {
    */
   generateRandomFruit(gravity, flyingInterval) {
     const image = FruitImages[Math.floor(Math.random() * FruitImages.length)];
-    const position = Board.randomPosition(
-      this.canvas.width,
-      this.canvas.height
-    );
-    const velocity = Board.randomVelocity(
-      position,
-      this.canvas.width,
-      this.canvas.height,
-      gravity,
-      flyingInterval
-    );
+    const position = Board.randomPosition(this.canvas.width, this.canvas.height);
+    const velocity = Board.randomVelocity(position, this.canvas.width, this.canvas.height, gravity, flyingInterval);
 
-    const fruit = new Fruit(
-      position,
-      velocity,
-      gravity,
-      image,
-      FruitImageSize,
-      (fruit) => {
-        this.fruits.push(fruit);
-      }
-    );
+    const fruit = new Fruit(position, velocity, gravity, image, FruitImageSize, (fruit) => {
+      this.fruits.push(fruit);
+    });
   }
 
   /**
@@ -372,28 +314,12 @@ class Board {
   generateBomb(gravity, flyingInterval) {
     const image = "images/bomb.png";
 
-    const position = Board.randomPosition(
-      this.canvas.width,
-      this.canvas.height
-    );
-    const velocity = Board.randomVelocity(
-      position,
-      this.canvas.width,
-      this.canvas.height,
-      gravity,
-      flyingInterval
-    );
+    const position = Board.randomPosition(this.canvas.width, this.canvas.height);
+    const velocity = Board.randomVelocity(position, this.canvas.width, this.canvas.height, gravity, flyingInterval);
 
-    const bomb = new Fruit(
-      position,
-      velocity,
-      gravity,
-      image,
-      FruitImageSize,
-      (bomb) => {
-        this.fruits.push(bomb);
-      }
-    );
+    const bomb = new Fruit(position, velocity, gravity, image, FruitImageSize, (bomb) => {
+      this.fruits.push(bomb);
+    });
   }
 
   /**
@@ -402,13 +328,7 @@ class Board {
   drawElements() {
     // Clear only the fruit part of the canvas to retain the trail
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.drawImage(
-      this.backgroundImage,
-      0,
-      0,
-      this.canvas.width,
-      this.canvas.height
-    );
+    this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
 
     // Draw fruits
     this.fruits.forEach((fruit) => {
@@ -436,14 +356,8 @@ class Board {
         this.ctx.lineWidth = lineThickness * Math.pow(taperFactor, i); // Gradually decrease line thickness
 
         this.ctx.beginPath();
-        this.ctx.moveTo(
-          extendedX + (deltaX * i) / taperSteps,
-          extendedY + (deltaY * i) / taperSteps
-        );
-        this.ctx.lineTo(
-          x + (deltaX * (i - taperSteps)) / taperSteps,
-          y + (deltaY * (i - taperSteps)) / taperSteps
-        );
+        this.ctx.moveTo(extendedX + (deltaX * i) / taperSteps, extendedY + (deltaY * i) / taperSteps);
+        this.ctx.lineTo(x + (deltaX * (i - taperSteps)) / taperSteps, y + (deltaY * (i - taperSteps)) / taperSteps);
         this.ctx.stroke();
       }
     }
@@ -463,11 +377,7 @@ class Board {
       fruit.move();
 
       // handle a missed fruit
-      if (
-        !fruit.isSliced() &&
-        !fruit.isBomb() &&
-        fruit.position.y > this.canvas.height
-      ) {
+      if (!fruit.isSliced() && !fruit.isBomb() && fruit.position.y > this.canvas.height) {
         this.missedFruitCallback();
       }
     });
@@ -502,43 +412,19 @@ class Board {
 
     const slicedImages = Board.slicedImagePaths(fruit.imagePath(), direction);
     // half one <-
-    const imageSize =
-      direction === SliceDirection.Horizontal
-        ? new Size(FruitImageSize.width, FruitImageSize.height / 2)
-        : new Size(FruitImageSize.width / 2, FruitImageSize.height);
-    let velocityX =
-      fruit.velocity.vx < 0 ? fruit.velocity.vx : -fruit.velocity.vx;
-    let halfOne = new Fruit(
-      new Point(fruit.position.x, fruit.position.y),
-      new Velocity(velocityX, 0),
-      fruit.gravity,
-      slicedImages[0],
-      imageSize,
-      (fruit) => {
-        this.fruits.push(fruit);
-      }
-    );
+    const imageSize = direction === SliceDirection.Horizontal ? new Size(FruitImageSize.width, FruitImageSize.height / 2) : new Size(FruitImageSize.width / 2, FruitImageSize.height);
+    let velocityX = fruit.velocity.vx < 0 ? fruit.velocity.vx : -fruit.velocity.vx;
+    let halfOne = new Fruit(new Point(fruit.position.x, fruit.position.y), new Velocity(velocityX, 0), fruit.gravity, slicedImages[0], imageSize, (fruit) => {
+      this.fruits.push(fruit);
+    });
     halfOne.slice();
     // half two ->
-    const positionX =
-      imageSize.width == FruitImageSize.width
-        ? fruit.position.x
-        : fruit.position.x + imageSize.width;
-    const positionY =
-      imageSize.width == FruitImageSize.width
-        ? fruit.position.y + imageSize.height
-        : fruit.position.y;
+    const positionX = imageSize.width == FruitImageSize.width ? fruit.position.x : fruit.position.x + imageSize.width;
+    const positionY = imageSize.width == FruitImageSize.width ? fruit.position.y + imageSize.height : fruit.position.y;
     velocityX = Math.abs(fruit.velocity.vx);
-    const halfTwo = new Fruit(
-      new Point(positionX, positionY),
-      new Velocity(velocityX, 0),
-      fruit.gravity,
-      slicedImages[1],
-      imageSize,
-      (fruit) => {
-        this.fruits.push(fruit);
-      }
-    );
+    const halfTwo = new Fruit(new Point(positionX, positionY), new Velocity(velocityX, 0), fruit.gravity, slicedImages[1], imageSize, (fruit) => {
+      this.fruits.push(fruit);
+    });
     halfTwo.slice();
     this.fruits.splice(this.fruits.indexOf(fruit), 1);
     this.updateStrikeCountDisplay(this.strikeCount);
@@ -576,11 +462,7 @@ class GameEngine {
   constructor() {
     // these member members should not change during the game
     this.maxMisses = 3;
-    this.chanceImages = [
-      document.getElementById("chance1"),
-      document.getElementById("chance2"),
-      document.getElementById("chance3"),
-    ];
+    this.chanceImages = [document.getElementById("chance1"), document.getElementById("chance2"), document.getElementById("chance3")];
     // Show all chances
     this.chanceImages.forEach((image) => (image.style.display = "block"));
 
@@ -588,7 +470,7 @@ class GameEngine {
     this.fruitFlyingInterval = FruitFlyingInterval;
     // Gravity causes fruit to slow down and eventually fall
     this.gravity = GameEngine.calculateGravity(this.fruitFlyingInterval);
-    
+    this.fruitsTillNextBomb = Math.floor(Math.random() * 4) + 4;
     this.board = new Board(
       GameEngine.backGroundImage(),
       () => {
@@ -601,6 +483,7 @@ class GameEngine {
         this.updateScore();
       }
     );
+    this.isPaused = false;
 
     this.missedFruits = 0;
     this.currentScore = 0;
@@ -627,14 +510,15 @@ class GameEngine {
   }
 
   spawnFruit() {
-    const i = Math.floor(Math.random() * 10) + 1;
-    // spawn a bomb
-    // TO BE DISCUSSED
-    if (i > 7) {
+    const times = Math.floor(Math.random() * 3) + 1;
+    for (let i = 0; i < times; i++) {
+      this.board.generateRandomFruit(this.gravity, this.fruitFlyingInterval);
+    }
+
+    this.fruitsTillNextBomb -= times;
+    if (this.fruitsTillNextBomb <= 0) {
+      this.fruitsTillNextBomb = Math.floor(Math.random() * 4) + 4;
       this.board.generateBomb(this.gravity, this.fruitFlyingInterval);
-    } else {
-      this.board.generateRandomFruit(this.gravity, this.fruitFlyingInterval);
-      this.board.generateRandomFruit(this.gravity, this.fruitFlyingInterval);
     }
   }
 
@@ -653,10 +537,18 @@ class GameEngine {
   }
 
   pause() {
+    this.isPaused = true;
     // stop all activity
     clearInterval(this.fruitSpawnIntervalId);
     clearInterval(this.fruitMoveIntervalId);
-    alert("Game paused");
+  }
+
+  resume() {
+    if (!this.isPaused) {
+      return;
+    }
+
+    this.isPaused = false;
     // start spawning the fruits
     this.fruitSpawnIntervalId = setInterval(() => {
       this.spawnFruit();
@@ -688,10 +580,10 @@ class GameEngine {
       localStorage.setItem("highScore", this.highScore); // Save new high score
     }
 
-    // update fruit speed every 50 points
+    // update fruit speed every 100 points
     // TO BE DISCUSSED
-    if (this.currentScore > 0 && this.currentScore % 50 === 0) {
-      this.fruitFlyingInterval -= FruitFlyingInterval / 5;
+    if (this.currentScore > 0 && this.currentScore % 100 === 0) {
+      this.fruitFlyingInterval -= FruitFlyingInterval / 20;
       this.gravity = GameEngine.calculateGravity(this.fruitFlyingInterval);
     }
   }
@@ -712,9 +604,7 @@ window.addEventListener("load", () => {
 });
 
 // Set initial button state
-muteButton.innerHTML = audio.muted
-  ? "<i class='fas fa-volume-mute'></i>"
-  : "<i class='fas fa-volume-up'></i>";
+muteButton.innerHTML = audio.muted ? "<i class='fas fa-volume-mute'></i>" : "<i class='fas fa-volume-up'></i>";
 
 // Mute/unmute toggle
 muteButton.addEventListener("click", () => {
@@ -732,15 +622,18 @@ let audioPlaying = false;
 // Pause game when the page is hidden
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
-    audioPlaying = !audio.isPaused;
+    console.log("hidden");
+    audioPlaying = !audio.isPaused && audio.currentTime > 0;
     if (audioPlaying) {
       audio.pause();
     }
     game.pause();
   } else {
+    console.log("visible");
     if (audioPlaying) {
       audio.play();
     }
+    game.resume();
   }
 });
 
