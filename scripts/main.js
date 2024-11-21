@@ -178,6 +178,13 @@ class Board {
     this.sliceAudio = new Audio("audio/Slice.wav");
   }
 
+  reset() {
+    this.fruits = [];
+    this.canvas.removeEventListener("mousemove", (event) => {
+      this.processMouseEvent(event);
+    });
+  }
+
   /** @brief update the strike count */
   updateStrikeCountDisplay(multiplier) {
     if (!this.strikeCountDiv) return;
@@ -492,6 +499,7 @@ class GameEngine {
     // Update the high score span on page load
     document.getElementById("highScore").textContent = this.highScore;
     document.getElementById("homeHighScore").textContent = this.highScore;
+    document.getElementById("score").textContent = this.currentScore;
   }
 
   updateMissedFruits() {
@@ -504,6 +512,10 @@ class GameEngine {
   }
 
   loop() {
+    if (this.isGameOver) {
+      return;
+    }
+
     this.board.drawElements();
     requestAnimationFrame(() => {
       this.loop();
@@ -562,6 +574,7 @@ class GameEngine {
 
   gameOver() {
     this.isGameOver = true;
+    this.board.reset();
     // stop all activity
     clearInterval(this.fruitSpawnIntervalId);
     clearInterval(this.fruitMoveIntervalId);
@@ -590,7 +603,7 @@ class GameEngine {
   }
 }
 
-const game = new GameEngine();
+let game = new GameEngine();
 
 // Audio Controlls
 const audio = document.getElementById("audio");
@@ -642,5 +655,11 @@ document.addEventListener("visibilitychange", () => {
 document.getElementById("startGameBtn").addEventListener("click", () => {
   document.getElementById("startGame").style.display = "none";
   document.getElementById("insideGameContainer").style.display = "flex";
+  game.start();
+});
+
+document.getElementById("restartGame").addEventListener("click", () => {
+  document.getElementById("gameEndDiv").style.display = "none";
+  game = new GameEngine();
   game.start();
 });
