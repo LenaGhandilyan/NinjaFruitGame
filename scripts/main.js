@@ -274,6 +274,7 @@ class Board {
 
   processMouseEvent(event) {
     const newPosition = new Point(event.pageX, event.pageY);
+    const sliceAudio = new Audio("audio/Slice.wav");
     const sliceDirection = Board.getSliceDirection(this.mousePosition, newPosition);
     this.mousePosition = newPosition;
 
@@ -289,6 +290,7 @@ class Board {
       if (this.mousePosition.x >= topLeft.x && this.mousePosition.y >= topLeft.y && this.mousePosition.x <= bottomRight.x && this.mousePosition.y <= bottomRight.y) {
         // mouse position is inside a fruit image
         this.slice(this.fruits[i], sliceDirection);
+        sliceAudio.play();
       } else {
         ++i;
       }
@@ -329,7 +331,7 @@ class Board {
     // Clear only the fruit part of the canvas to retain the trail
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
-
+    this.ctx.shadowBlur = 0;
     // Draw fruits
     this.fruits.forEach((fruit) => {
       fruit.draw(this.ctx);
@@ -340,26 +342,21 @@ class Board {
 
     // Draw mouse trail
     if (this.lastX !== null && this.lastY !== null) {
-      const deltaX = x - this.lastX;
-      const deltaY = y - this.lastY;
+      this.ctx.strokeStyle = `rgba(255, 255, 255, 0.7)`;
+      this.ctx.lineWidth = 5;
+      this.ctx.lineCap = "round";
+      this.ctx.shadowBlur = 10; // Add a blur effect to the line
+      this.ctx.shadowColor = `rgba(255, 255, 255, 0.7)`;
 
-      // Extend the starting point of the line backward to make it longer
-      const extendedX = this.lastX - deltaX * 2;
-      const extendedY = this.lastY - deltaY * 2;
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.lastX, this.lastY);
+      this.ctx.lineTo(x, y);
+      this.ctx.stroke();
 
-      const lineThickness = 5; // Initial thickness of the line
-      const taperSteps = 5; // Number of steps for tapering
-      const taperFactor = 0.8;
-
-      for (let i = 0; i < taperSteps; i++) {
-        this.ctx.strokeStyle = `rgba(0, 0, 0, ${0.7 * (1 - i / taperSteps)})`; // Adjust opacity for fade
-        this.ctx.lineWidth = lineThickness * Math.pow(taperFactor, i); // Gradually decrease line thickness
-
-        this.ctx.beginPath();
-        this.ctx.moveTo(extendedX + (deltaX * i) / taperSteps, extendedY + (deltaY * i) / taperSteps);
-        this.ctx.lineTo(x + (deltaX * (i - taperSteps)) / taperSteps, y + (deltaY * (i - taperSteps)) / taperSteps);
-        this.ctx.stroke();
-      }
+      // Add a few more points to the path to create a longer trail
+      this.ctx.lineTo(x + (x - this.lastX) * 0.5, y + (y - this.lastY) * 0.5);
+      this.ctx.lineTo(x + (x - this.lastX) * 1.5, y + (y - this.lastY) * 1.5);
+      this.ctx.stroke();
     }
 
     this.lastX = x;
