@@ -172,9 +172,12 @@ body {
 }
 
 .gameEndContainer {
-  background-color: rgb(255, 49, 84);
+  background-color: black;
   /* background-color: rgb(255, 49, 84); */
   /* border: 2px solid white; */
+  opacity: 0.7;
+  width: 60%;
+  height: 60%;
   border-radius: 6px;
   pointer-events: all;
   color: white;
@@ -193,21 +196,40 @@ body {
   font-size: 22px;
 }
 
+/* CSS for the Restart Button */
+
 #restartGame {
-  background-color: transparent;
-  border: none;
-  outline: none;
-  border-bottom: 2px solid white;
-  color: white;
-  font-size: 22px;
-  cursor: pointer;
+  background-color: red; 
+  color: black; 
+  font-family: 'Arial', sans-serif; 
+  font-size: 24px; 
+  font-weight: bold; 
+  padding: 15px 30px; 
+  border: 3px solid red; 
+  border-radius: 30px; 
+  text-shadow: -2px 2px 0px black, 1px 1px 0px black; 
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3); 
+  cursor: pointer; 
+  outline: none; 
+  transition: all 0.3s ease; 
 }
 
+/* Hover effect */
 #restartGame:hover {
-  color: rgb(49, 255, 131);
-  border-bottom: 2px solid rgb(255, 49, 84);
+  background-color: #ff4d4d; 
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.5); 
+  transform: translateY(-2px); 
 }
 
+/* Active effect (when clicked) */
+#restartGame:active {
+  transform: translateY(2px); 
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3); 
+}
+
+.Pgameover{
+  font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
 /* Audio Control  */
 .sound-text {
   font-size: 20px;
