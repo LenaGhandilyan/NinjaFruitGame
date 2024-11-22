@@ -579,7 +579,10 @@ class GameEngine {
     clearInterval(this.fruitSpawnIntervalId);
     clearInterval(this.fruitMoveIntervalId);
     const overlay = document.getElementById("gameEndDiv");
-    overlay.style.display = "block";
+    overlay.style.display = "flex";
+    overlay.style.justifyContent = "center";
+    overlay.style.alignItems = "center";
+    overlay.style.opacity=0.9;
     document.getElementById("endGameScore").textContent = this.currentScore;
   }
 
