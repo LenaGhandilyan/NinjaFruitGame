@@ -582,13 +582,19 @@ class GameEngine {
     overlay.style.display = "flex";
     overlay.style.justifyContent = "center";
     overlay.style.alignItems = "center";
-    overlay.style.opacity=0.9;
+    overlay.style.opacity = 0.9;
+    console.log("game over", this.currentScore);
     document.getElementById("endGameScore").textContent = this.currentScore;
   }
 
   // Update score display
   updateScore(newPoints) {
+    if (this.isGameOver) {
+      return;
+    }
+
     this.currentScore += newPoints;
+    console.log("update score", this.currentScore);
     document.getElementById("score").textContent = this.currentScore;
 
     if (this.currentScore > this.highScore) {
